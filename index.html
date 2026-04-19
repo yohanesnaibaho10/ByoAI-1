@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ByoAI - Assistant Terlengkap</title>
+    
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4374690649232938" crossorigin="anonymous"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        body { font-family: ui-sans-serif, system-ui, sans-serif; transition: background-color 0.3s, color 0.3s; }
+        .dark { background-color: #0f111a; color: #f3f4f6; }
+        .light { background-color: #f9fafb; color: #111827; }
+        
+        /* Message Bubbles */
+        .msg-bubble { max-width: 85%; padding: 1rem; border-radius: 1rem; word-wrap: break-word; position: relative; }
+        .dark .msg-user { background-color: #2b2d31; border-top-right-radius: 0; }
+        .dark .msg-ai { background-color: transparent; border: 1px solid #374151; border-top-left-radius: 0; }
+        .light .msg-user { background-color: #dbeafe; color: #1e3a8a; border-top-right-radius: 0; }
+        .light .msg-ai { background-color: white; border: 1px solid #e5e7eb; border-top-left-radius: 0; }
+
+        /* Code Block Styling */
+        pre { margin: 0; padding: 1rem; overflow-x: auto; font-family: monospace; font-size: 0.85rem; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; font-size: 0.75rem; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+        .dark .code-header { background-color: #1f2937; color: #9ca3af; border-bottom: 1px solid #374151; }
+        .light .code-header { background-color: #e5e7eb; color: #4b5563; border-bottom: 1px solid #d1d5db; }
+        .dark pre { background-color: #0d1117; color: #e5e7eb; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+        .light pre { background-color: #f3f4f6; color: #1f2937; border-bottom-left-radius: 0.5rem; border-bottom-right-radius: 0.5rem; }
+
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .file-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.2rem; font-family: monospace; font-size: 0.75rem; }
+        .dark .file-header { background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd; }
+        .light .file-header { background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #1d4ed8; }
+        
+        /* Preview Frame */
+        .preview-frame { width: 100%; height: 300px; border: none; background: white; display: block; }
+    </style>
+</head>
+<body class="dark h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed md:relative z-30 w-[280px] h-full border-r flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0 dark:bg-[#161b22] dark:border-gray-800 light:bg-white light:border-gray-200">
+        <div class="p-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">ByoAI</h1>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-500"><i data-lucide="x"></i></button>
+        </div>
+
+        <div class="px-3 pb-2">
+            <button onclick="newChat()" class="w-full flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl transition-all shadow-lg shadow-blue-900/20">
+                <i data-lucide="plus" class="w-5 h-5"></i> <span class="font-medium" data-t="newChat">Chat Baru</span>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-3 py-2 space-y-1 hide-scrollbar" id="history-list">
+            <!-- History Items -->
+        </div>
+
+        <div class="p-4 border-t dark:border-gray-800 light:border-gray-200">
+            <button onclick="toggleModal('settings-modal')" class="flex items-center gap-3 text-sm w-full p-2 rounded-lg transition-colors mb-2 dark:text-gray-400 dark:hover:bg-gray-800 light:text-gray-600 light:hover:bg-gray-100">
+                <i data-lucide="settings" class="w-5 h-5"></i> <span data-t="settings">Pengaturan</span>
+            </button>
+            <div class="flex items-center gap-3 px-3 py-2 rounded-xl border dark:border-green-500/20 dark:bg-green-500/5 light:border-green-200 light:bg-green-50">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-tr from-green-400 to-emerald-600">
+                    <i data-lucide="crown" class="w-4 h-4 text-white"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="text-xs font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500" data-t="proUser">Akses Tanpa Batas</div>
+                    <div class="text-[10px] text-gray-500" data-t="plan">Gratis Selamanya</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- OVERLAY -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-20 hidden md:hidden backdrop-blur-sm transition-opacity"></div>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col relative w-full dark:bg-[#0f111a] light:bg-gray-50">
+        <!-- Header -->
+        <header class="h-16 border-b flex items-center justify-between px-4 sticky top-0 z-10 backdrop-blur-md dark:bg-[#0f111a]/90 dark:border-gray-800 light:bg-white/90 light:border-gray-200">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-500"><i data-lucide="menu"></i></button>
+                <div class="flex flex-col">
+                    <div class="text-sm font-medium flex items-center gap-2">
+                        <span id="header-model-name">Gemini 3</span>
+                        <span id="header-badges" class="flex gap-1"></span>
+                    </div>
+                    <span class="text-[10px] text-green-500 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> <span data-t="online">Online</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Model Selector -->
+            <div class="flex items-center gap-2">
+                 <button onclick="summarizeChat()" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium border transition-all dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 light:border-gray-300 light:hover:bg-gray-100 light:text-gray-600" title="Ringkas">
+                    <i data-lucide="file-text" class="w-3 h-3"></i>
+                </button>
+                
+                <!-- Collapsible Container (Fix: ID matched to JS) -->
+                <div class="p-1 rounded-lg flex items-center gap-1 transition-all duration-300 dark:bg-gray-800 light:bg-gray-200" id="model-selector-container">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-6 pb-4">
+            <!-- Messages -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 border-t dark:border-gray-800 light:border-gray-200 dark:bg-[#0f111a] light:bg-white">
+            <!-- Attachment Preview -->
+            <div id="attachment-preview" class="hidden mb-2 p-2 rounded-lg text-xs flex items-center gap-2 w-fit dark:bg-blue-900/30 dark:border-blue-500/30 dark:text-blue-300 light:bg-blue-50 light:border-blue-200 light:text-blue-600 border">
+                <i id="att-icon" data-lucide="file" class="w-4 h-4"></i>
+                <span id="att-name" class="truncate max-w-[200px]">file.txt</span>
+                <button onclick="clearAttachment()" class="hover:text-red-500"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </div>
+
+            <div class="relative max-w-4xl mx-auto">
+                <div class="absolute left-3 top-3 flex gap-3 text-gray-400">
+                    <button onclick="document.getElementById('file-input').click()" title="Attach"><i data-lucide="paperclip" class="w-5 h-5"></i></button>
+                    <button onclick="toggleMic()" id="btn-mic" title="Voice"><i data-lucide="mic" class="w-5 h-5"></i></button>
+                    <button onclick="startCamera()" title="Camera"><i data-lucide="camera" class="w-5 h-5"></i></button>
+                </div>
+                <input type="file" id="file-input" class="hidden" onchange="handleFile(this)" accept="image/*,video/*,audio/*,.txt,.js,.py,.html,.css,.json">
+                
+                <textarea id="prompt-input" rows="1" class="w-full rounded-xl py-3 pl-32 pr-12 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none dark:bg-[#1e222b] dark:text-white dark:border-gray-700 dark:placeholder-gray-500 light:bg-gray-100 light:text-gray-900 light:border-gray-300 light:placeholder-gray-400" placeholder="Kirim pesan ke ByoAI..."></textarea>
+                
+                <div class="absolute right-2 top-2 flex items-center gap-1">
+                    <button onclick="enhancePrompt()" class="p-2 text-purple-400 hover:bg-purple-500/10 rounded-lg" title="Enhance"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
+                    <button onclick="sendMessage()" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><i data-lucide="send" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <p class="text-center text-[10px] text-gray-500 mt-2" data-t="disclaimer">ByoAI ditenagai oleh Gemini dan ChatGPT.</p>
+        </div>
+    </main>
+
+    <!-- MODALS -->
+    <!-- Settings -->
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div class="w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden max-h-[80vh] overflow-y-auto dark:bg-[#1e222b] dark:border-gray-700 light:bg-white light:border-gray-200">
+            <div class="flex justify-between p-6 border-b dark:border-gray-700 light:border-gray-200 sticky top-0 z-10 dark:bg-[#1e222b] light:bg-white">
+                <h2 class="text-xl font-bold dark:text-white light:text-gray-900" data-t="settings">Pengaturan</h2>
+                <button onclick="toggleModal('settings-modal')" class="text-gray-500"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <div>
+                    <label class="block text-sm font-bold mb-2 dark:text-gray-300 light:text-gray-700" data-t="nickname">Nama Panggilan</label>
+                    <div class="flex gap-2">
+                         <input type="text" id="set-nickname" class="flex-1 p-2 rounded border dark:bg-gray-800 dark:border-gray-600 dark:text-white light:bg-gray-50 light:border-gray-300">
+                         <button class="p-2 rounded border dark:border-gray-600 dark:bg-gray-800 dark:text-green-400 light:border-gray-300 light:bg-gray-50 light:text-green-600"><i data-lucide="save"></i></button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2 dark:text-gray-300 light:text-gray-700" data-t="appearance">Tampilan</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setTheme('light')" class="p-2 border rounded flex items-center justify-center gap-2 dark:text-gray-300 light:bg-blue-50 light:border-blue-500 light:text-blue-700"><i data-lucide="sun" class="w-4"></i> Terang</button>
+                        <button onclick="setTheme('dark')" class="p-2 border rounded flex items-center justify-center gap-2 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-400"><i data-lucide="moon" class="w-4"></i> Gelap</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2 dark:text-gray-300 light:text-gray-700" data-t="language">Bahasa</label>
+                    <div id="lang-grid" class="grid grid-cols-3 gap-2"></div>
+                </div>
+                 <div>
+                    <label class="block text-sm font-bold mb-2 dark:text-gray-300 light:text-gray-700" data-t="voice">Suara AI</label>
+                    <div id="voice-list" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera -->
+    <div id="camera-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+        <div class="relative w-full max-w-lg bg-black rounded-2xl overflow-hidden border border-gray-800">
+            <video id="cam-video" autoplay playsinline class="w-full h-[60vh] object-cover"></video>
+            <div class="absolute bottom-0 inset-x-0 p-6 flex justify-between items-center bg-gradient-to-t from-black via-black/80 to-transparent">
+                <button onclick="stopCamera()" class="p-3 bg-gray-800 text-white rounded-full">Batal</button>
+                <button onclick="snapPhoto()" class="w-16 h-16 bg-white rounded-full border-4 border-gray-300 flex items-center justify-center"><div class="w-12 h-12 bg-white rounded-full border-2 border-black"></div></button>
+                <div class="w-12"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- KONFIGURASI ---
+        const apiKey = ""; // ISI API KEY ANDA DI SINI
+
+        // --- CONSTANTS ---
+        const LANGUAGES = {
+            id: { label: 'Bahasa Indonesia', prompt: 'Indonesian' }, en: { label: 'English', prompt: 'English' }, zh: { label: '中文 (Simplified)', prompt: 'Chinese' },
+            es: { label: 'Español', prompt: 'Spanish' }, fr: { label: 'Français', prompt: 'French' }, de: { label: 'Deutsch', prompt: 'German' },
+            it: { label: 'Italiano', prompt: 'Italian' }, pt: { label: 'Português', prompt: 'Portuguese' }, ru: { label: 'Русский', prompt: 'Russian' },
+            ja: { label: '日本語', prompt: 'Japanese' }, ko: { label: '한국어', prompt: 'Korean' }, ar: { label: 'العربية', prompt: 'Arabic' },
+            hi: { label: 'हिन्दी', prompt: 'Hindi' }, tr: { label: 'Türkçe', prompt: 'Turkish' }, nl: { label: 'Nederlands', prompt: 'Dutch' },
+            vi: { label: 'Tiếng Việt', prompt: 'Vietnamese' }, th: { label: 'ไทย', prompt: 'Thai' }, pl: { label: 'Polski', prompt: 'Polish' },
+            sv: { label: 'Svenska', prompt: 'Swedish' }, ms: { label: 'Bahasa Melayu', prompt: 'Malay' }, el: { label: 'Ελληνικά', prompt: 'Greek' },
+            he: { label: 'עברית', prompt: 'Hebrew' }, bn: { label: 'বাংলা', prompt: 'Bengali' }
+        };
+
+        const TRANSLATIONS = {
+            id: { newChat: 'Chat Baru', settings: 'Pengaturan', history: 'RIWAYAT', proUser: 'Akses Tanpa Batas', plan: 'Gratis Selamanya', online: 'Online', placeholder: 'Kirim pesan ke ByoAI...', disclaimer: 'ByoAI ditenagai oleh Gemini dan ChatGPT.', nickname: 'Nama Panggilan', appearance: 'Tampilan', language: 'Bahasa', voice: 'Suara AI', themeLight: 'Terang', themeDark: 'Gelap', summarize: 'Ringkas', preview: 'Pratinjau', download: 'Unduh', refactor: 'Perbaiki Kode', enhance: 'Sempurnakan', maleVoices: 'Suara Pria', femaleVoices: 'Suara Wanita', selectModel: 'Pilih AI', hideModel: 'Sembunyikan' },
+            en: { newChat: 'New Chat', settings: 'Settings', history: 'HISTORY', proUser: 'Unlimited Access', plan: 'Free Forever', online: 'Online', placeholder: 'Message ByoAI...', disclaimer: 'ByoAI powered by Gemini and ChatGPT.', nickname: 'Nickname', appearance: 'Appearance', language: 'Language', voice: 'AI Voice', themeLight: 'Light', themeDark: 'Dark', summarize: 'Summarize', preview: 'Preview', download: 'Download', refactor: 'Refactor Code', enhance: 'Enhance', maleVoices: 'Male Voices', femaleVoices: 'Female Voices', selectModel: 'Select AI', hideModel: 'Hide' }
+        };
+
+        const VOICE_OPTIONS = {
+            male: [{ l: "Anak Laki-laki", v: "Puck" }, { l: "Remaja Pria", v: "Zephyr" }, { l: "Pria Muda", v: "Orus" }, { l: "Pria Dewasa", v: "Fenrir" }, { l: "Pria Profesional", v: "Enceladus" }, { l: "Pria Berat", v: "Iapetus" }, { l: "Bapak-bapak", v: "Alnilam" }, { l: "Pria Berwibawa", v: "Charon" }, { l: "Kakek Ramah", v: "Algenib" }, { l: "Kakek Bijak", v: "Schedar" }],
+            female: [{ l: "Anak Perempuan", v: "Leda" }, { l: "Remaja Putri", v: "Kore" }, { l: "Wanita Muda", v: "Aoede" }, { l: "Wanita Dewasa", v: "Callirrhoe" }, { l: "Wanita Profesional", v: "Umbriel" }, { l: "Wanita Lembut", v: "Despina" }, { l: "Ibu-ibu", v: "Algieba" }, { l: "Wanita Tegas", v: "Autonoe" }, { l: "Nenek Ramah", v: "Erinome" }, { l: "Nenek Bijak", v: "Rasalgethi" }]
+        };
+
+        // --- STATE ---
+        let state = {
+            lang: 'id',
+            theme: 'dark',
+            model: 'Gemini 3',
+            voice: 'Kore',
+            nickname: '',
+            messages: [{id: 1, role: 'ai', content: 'Halo! Saya ByoAI. Asisten Gratis Anda.\n\nFitur lengkap: **Kamera**, **Suara**, **Video Analisis**, **Coding (Run)**, **Gambar**, dan **23 Bahasa**.', model: 'Gemini 3'}],
+            attachment: null,
+            isRecording: false,
+            useSearch: false,
+            showModelSelector: true
+        };
+
+        let mediaRec = null;
+
+        // --- INIT ---
+        function init() {
+            lucide.createIcons();
+            renderMessages();
+            renderSettingsUI();
+            renderModelSelector();
+            setLanguage(state.lang);
+        }
+
+        function getButtonColor(m) {
+            if(m === 'Gemini 3') return 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-transparent';
+            if(m === 'ChatGPT 5') return 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent';
+            if(m === 'Gemini 3 Canvas') return 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent';
+            if(m === 'Gemini 2.5 Live') return 'bg-gradient-to-r from-red-600 to-orange-600 text-white border-transparent';
+            if(m === 'Imagen 4') return 'bg-gradient-to-r from-pink-600 to-rose-600 text-white border-transparent';
+            return 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-transparent'; // Thinking
+        }
+
+        function getModelIcon(m) {
+            if(m.includes('Gemini 3')) return 'zap';
+            if(m.includes('GPT')) return 'cpu';
+            if(m.includes('Canvas')) return 'layout';
+            if(m.includes('Live')) return 'radio';
+            if(m.includes('Imagen')) return 'palette';
+            return 'brain-circuit';
+        }
+
+        // --- UI RENDERING ---
+        function renderModelSelector() {
+            const container = document.getElementById('model-selector-container'); // Correct ID used here
+            const t = (TRANSLATIONS[state.lang] || TRANSLATIONS.en);
+            
+            if (!state.showModelSelector) {
+                container.innerHTML = `
+                <button onclick="toggleModelSelector(true)" class="flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${getButtonColor(state.model)}" title="${t.selectModel}">
+                   <i data-lucide="${getModelIcon(state.model)}" class="w-3 h-3"></i><span class="hidden md:inline whitespace-nowrap">${state.model}</span><i data-lucide="chevron-down" class="w-3 h-3 opacity-70"></i>
+                 </button>`;
+            } else {
+                const models = [
+                    {id:'Gemini 3', icon:'zap', color:'blue'},
+                    {id:'Gemini 2.0 Thinking', icon:'brain-circuit', color:'cyan'},
+                    {id:'ChatGPT 5', icon:'cpu', color:'emerald'},
+                    {id:'Gemini 3 Canvas', icon:'layout', color:'purple'},
+                    {id:'Gemini 2.5 Live', icon:'radio', color:'red'},
+                    {id:'Imagen 4', icon:'palette', color:'pink'}
+                ];
+
+                let html = models.map(m => `
+                    <button onclick="setModel('${m.id}')" class="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium border transition-all whitespace-nowrap ${state.model === m.id ? `bg-${m.color}-600 text-white border-${m.color}-600` : `text-gray-500 border-transparent hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400`}">
+                        <i data-lucide="${m.icon}" class="w-3 h-3"></i> ${m.id.split(' ')[0]}
+                    </button>
+                `).join('');
+
+                if(state.model === 'Gemini 3') {
+                     html = `<button onclick="toggleSearch()" class="p-1.5 rounded-md border transition-all ${state.useSearch ? 'bg-blue-500 text-white border-blue-500' : 'text-gray-500 border-transparent hover:bg-gray-700'}" title="${state.useSearch ? t.searchOn : t.searchOff}"><i data-lucide="globe" class="w-3 h-3"></i></button>` + html;
+                }
+
+                html += `<div class="w-px h-4 bg-gray-500/20 mx-1"></div><button onclick="toggleModelSelector(false)" class="p-1.5 rounded-md hover:bg-black/10 transition-colors text-gray-500" title="${t.hideModel}"><i data-lucide="chevron-up" class="w-3 h-3"></i></button>`;
+                container.innerHTML = html;
+            }
+            
+            // Header Info
+            document.getElementById('header-model-name').innerText = state.model;
+            const badges = document.getElementById('header-badges');
+            badges.innerHTML = '';
+            if(state.model === 'ChatGPT 5') badges.innerHTML = '<span class="px-1 py-0.5 bg-emerald-900 text-emerald-400 text-[10px] rounded border border-emerald-700 flex items-center gap-1"><i data-lucide="file-code" class="w-3"></i> Coding</span>';
+            if(state.model === 'Gemini 3' && state.useSearch) badges.innerHTML = '<span class="px-1 py-0.5 bg-blue-900 text-blue-400 text-[10px] rounded border border-blue-700 flex items-center gap-1"><i data-lucide="globe" class="w-3 animate-pulse"></i> Search</span>';
+            if(state.model === 'Gemini 2.5 Live') badges.innerHTML = '<span class="px-1 py-0.5 bg-red-900 text-red-400 text-[10px] rounded border border-red-700 flex items-center gap-1"><i data-lucide="mic" class="w-3"></i> Auto-Live</span>';
+
+            lucide.createIcons();
+        }
+
+        function renderMessages() {
+            const box = document.getElementById('chat-box');
+            box.innerHTML = state.messages.map(msg => {
+                const isUser = msg.role === 'user';
+                
+                // Content Processing (Markdown + Custom Parsers)
+                let contentHtml = '';
+                
+                // Imagen Logic
+                if(msg.model === 'Imagen 4' && msg.generatedImage) {
+                    contentHtml = `<div class="rounded-xl overflow-hidden border border-gray-700 shadow-xl group relative"><img src="${msg.generatedImage}" class="w-full h-auto max-h-[400px] object-cover"><a href="${msg.generatedImage}" download="imagen.png" class="absolute bottom-3 right-3 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100" title="Download Image"><i data-lucide="download" class="w-4 h-4"></i></a></div><p class="text-xs text-gray-400 italic mt-1">Generated by Imagen 4.0</p>`;
+                } else {
+                    // Smart Code Parser
+                    const parts = [];
+                    let currentText = "";
+                    let inCode = false, lang = "";
+                    msg.content.split('\n').forEach(line => {
+                        if(line.startsWith('```')) {
+                            if(inCode) { parts.push({type:'code', content:currentText, lang}); currentText=""; inCode=false; }
+                            else { if(currentText.trim()) parts.push({type:'text', content:currentText}); currentText=""; inCode=true; lang=line.replace('```','').trim(); }
+                        } else currentText += line + '\n';
+                    });
+                    if(currentText.trim()) parts.push({type:'text', content:currentText});
+
+                    contentHtml = parts.map(p => {
+                        if(p.type === 'code') {
+                            const showPreview = p.lang === 'html' && (msg.model === 'Gemini 3 Canvas' || msg.model === 'ChatGPT 5');
+                            let previewHtml = '';
+                            if(showPreview) {
+                                const blob = new Blob([p.content], {type:'text/html'});
+                                const url = URL.createObjectURL(blob);
+                                previewHtml = `<div class="border-t border-gray-700"><div class="bg-gray-800 px-3 py-1 flex justify-between items-center"><span class="text-xs font-bold text-gray-300 flex items-center gap-2"><i data-lucide="layout" class="w-3"></i> Preview</span><a href="${url}" download="index.html" class="text-gray-400 hover:text-white text-xs flex items-center gap-1 bg-gray-700/50 px-2 py-1 rounded"><i data-lucide="download" class="w-3"></i></a></div><div class="bg-white h-[300px] w-full resize-y overflow-auto"><iframe src="${url}" class="w-full h-full border-none"></iframe></div></div>`;
+                            }
+                            return `<div class="my-3 rounded-lg overflow-hidden border border-gray-700 shadow-lg"><div class="flex justify-between px-3 py-2 bg-gray-800 border-b border-gray-700"><div class="flex items-center gap-2"><span class="flex gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span><span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span></span><span class="text-xs text-gray-400 font-mono ml-2">${p.lang||'code'}</span></div><div class="flex gap-2"><button onclick="refactorCode(this)" class="text-gray-400 hover:text-white text-xs flex gap-1"><i data-lucide="refresh-cw" class="w-3"></i> Refactor</button><button onclick="copyCode(this)" class="text-gray-400 hover:text-white text-xs"><i data-lucide="copy" class="w-3"></i></button></div></div><pre class="p-4 text-xs font-mono overflow-x-auto bg-[#0d1117] text-gray-300 m-0">${p.content}</pre>${previewHtml}</div>`;
+                        } else {
+                            // Text parsing for headers
+                            let html = p.content;
+                            html = html.replace(/\*\*File:\s*(.*?)\*\*/g, '<div class="file-header"><i data-lucide="file-code" class="w-3"></i> <b>$1</b></div>');
+                            html = html.replace(/\*\*Preview:\*\*/g, '<div class="flex items-center gap-2 bg-green-500/10 border border-green-500/30 p-2 rounded-lg mt-4 mb-1 text-green-400 font-mono text-xs"><i data-lucide="eye" class="w-3"></i><b>Output Explanation</b></div>');
+                            return marked.parse(html); 
+                        }
+                    }).join('');
+                }
+
+                // Attachment Display
+                let attHtml = '';
+                if(msg.attachment) {
+                     if(msg.attachment.isImage) attHtml = `<img src="${msg.attachment.data}" class="max-w-[200px] rounded-lg mb-2 border border-gray-700">`;
+                     else if(msg.attachment.isVideo) attHtml = `<video src="${msg.attachment.data}" controls class="max-w-[200px] rounded-lg mb-2 border border-gray-700"></video>`;
+                     else if(msg.attachment.isAudio) attHtml = `<div class="flex items-center gap-2 mb-2"><audio src="${msg.attachment.data}" controls class="h-8"></audio></div>`;
+                     else attHtml = `<div class="p-2 bg-gray-800 rounded mb-2 text-xs flex items-center gap-2 text-blue-400 border border-gray-700"><i data-lucide="file" class="w-3"></i> ${msg.attachment.name}</div>`;
+                }
+
+                // Suggestions
+                let suggHtml = '';
+                if(msg.suggestions) {
+                    suggHtml = `<div class="flex flex-wrap gap-2 mt-2 pt-2 border-t border-gray-700/30">` + 
+                    msg.suggestions.map(s => `<button onclick="sendSuggestion('${s.replace(/'/g,"\\'")}')" class="text-xs px-2 py-1 rounded-full bg-blue-900/30 text-blue-300 hover:bg-blue-800 border border-blue-500/20 flex items-center gap-1"><i data-lucide="lightbulb" class="w-3"></i> ${s}</button>`).join('') + 
+                    `</div>`;
+                }
+
+                return `
+                <div class="flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}">
+                    ${!isUser ? `<div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0"><i data-lucide="bot" class="text-white w-4"></i></div>` : ''}
+                    <div class="msg-bubble ${isUser ? 'msg-user' : 'msg-ai'} text-sm">
+                        ${attHtml}
+                        ${contentHtml}
+                        ${suggHtml}
+                        ${!isUser && msg.model !== 'Imagen 4' ? `<div class="mt-2 flex gap-2"><button onclick="playTTS('${encodeURIComponent(msg.content.replace(/'/g, "\\'"))}')" class="text-gray-500 hover:text-blue-400"><i data-lucide="volume-2" class="w-4"></i></button></div>` : ''}
+                    </div>
+                    ${isUser ? `<div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center shrink-0"><i data-lucide="user" class="text-white w-4"></i></div>` : ''}
+                </div>`;
+            }).join('');
+            
+            lucide.createIcons();
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function renderSettingsUI() {
+             // Language
+             const langGrid = document.getElementById('lang-grid');
+             langGrid.innerHTML = Object.keys(LANGUAGES).map(k => `<button onclick="setLanguage('${k}')" id="btn-lang-${k}" class="p-2 rounded-lg border text-xs text-center transition-all border-gray-700 hover:bg-gray-800">${LANGUAGES[k].label}</button>`).join('');
+             
+             // Voices
+             const voiceList = document.getElementById('voice-list');
+             voiceList.innerHTML = `
+               <div class="text-xs font-bold text-gray-500 mb-1" data-t="maleVoices">Suara Pria</div>
+               <div class="grid grid-cols-2 gap-2 mb-2">
+                  ${VOICE_OPTIONS.male.map(v => `<button onclick="setVoice('${v.v}')" id="btn-voice-${v.v}" class="p-2 rounded border text-sm transition-all border-gray-700 hover:bg-gray-800">${v.l}</button>`).join('')}
+               </div>
+               <div class="text-xs font-bold text-gray-500 mb-1" data-t="femaleVoices">Suara Wanita</div>
+               <div class="grid grid-cols-2 gap-2">
+                  ${VOICE_OPTIONS.female.map(v => `<button onclick="setVoice('${v.v}')" id="btn-voice-${v.v}" class="p-2 rounded border text-sm transition-all border-gray-700 hover:bg-gray-800">${v.l}</button>`).join('')}
+               </div>
+             `;
+        }
+
+        // --- ACTIONS ---
+        function setModel(m) { state.model = m; renderModelSelector(); }
+        function toggleModelSelector(val) { state.showModelSelector = val; renderModelSelector(); }
+        function toggleSearch() { state.useSearch = !state.useSearch; renderModelSelector(); }
+        function newChat() { state.messages = []; renderMessages(); }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('-translate-x-full'); 
+            document.getElementById('sidebar-overlay').classList.toggle('hidden'); 
+        }
+        function setTheme(t) { document.body.className = t + ' h-screen flex overflow-hidden'; state.theme=t; }
+        function sendSuggestion(txt) { document.getElementById('prompt-input').value = txt; sendMessage(); }
+        
+        function handleFile(input) {
+            const f = input.files[0];
+            if(!f) return;
+            const r = new FileReader();
+            r.onload = e => {
+                state.attachment = { name: f.name, type: f.type, data: e.target.result, isImage: f.type.startsWith('image'), isVideo: f.type.startsWith('video'), isAudio: f.type.startsWith('audio') };
+                document.getElementById('attachment-preview').classList.remove('hidden');
+                document.getElementById('att-name').innerText = f.name;
+                document.getElementById('att-icon').setAttribute('data-lucide', state.attachment.isImage ? 'image' : state.attachment.isVideo ? 'video' : state.attachment.isAudio ? 'mic' : 'file');
+                lucide.createIcons();
+            };
+            if(f.type.startsWith('image') || f.type.startsWith('video') || f.type.startsWith('audio')) r.readAsDataURL(f); else r.readAsText(f);
+            input.value = '';
+        }
+        function clearAttachment() { state.attachment = null; document.getElementById('attachment-preview').classList.add('hidden'); }
+        
+        function setVoice(v) { 
+             state.voice = v; 
+             // Visual Update
+             document.querySelectorAll('[id^="btn-voice-"]').forEach(b => {
+                 b.classList.remove('bg-indigo-600', 'bg-pink-600', 'text-white', 'border-indigo-600', 'border-pink-600');
+                 b.classList.add('border-gray-700', 'hover:bg-gray-800');
+             });
+             const btn = document.getElementById(`btn-voice-${v}`);
+             const isFemale = VOICE_OPTIONS.female.some(vo => vo.v === v);
+             btn.classList.remove('border-gray-700', 'hover:bg-gray-800');
+             btn.classList.add(isFemale ? 'bg-pink-600' : 'bg-indigo-600', 'text-white', isFemale ? 'border-pink-600' : 'border-indigo-600');
+        }
+
+        function setLanguage(l) {
+            state.lang = l;
+            const t = (TRANSLATIONS[l] || TRANSLATIONS.en);
+            document.querySelectorAll('[data-t]').forEach(el => el.innerText = t[el.getAttribute('data-t')] || el.innerText);
+            
+             // Visual Update Lang
+             document.querySelectorAll('[id^="btn-lang-"]').forEach(b => b.className = 'p-2 rounded-lg border text-xs text-center transition-all border-gray-700 hover:bg-gray-800');
+             document.getElementById(`btn-lang-${l}`).className = 'p-2 rounded-lg border text-xs text-center transition-all bg-blue-600 text-white border-blue-600';
+        }
+
+        // --- API CALLS ---
+        async function sendMessage() {
+            const input = document.getElementById('prompt-input');
+            const text = input.value;
+            if(!text && !state.attachment) return;
+
+            // User Msg
+            state.messages.push({ role: 'user', content: text, attachment: state.attachment, timestamp: new Date() });
+            renderMessages();
+            input.value = '';
+            const fileData = state.attachment;
+            clearAttachment();
+
+            // AI Msg Placeholder
+            const aiMsgIndex = state.messages.push({ role: 'ai', content: '...', model: state.model }) - 1;
+            renderMessages();
+
+            let sys = "You are ByoAI. Helpful, concise. ";
+            const langName = LANGUAGES[state.lang] ? LANGUAGES[state.lang].prompt : 'Indonesian';
+            sys += `Answer in ${langName}. `;
+            if(state.nickname) sys += `User name is ${state.nickname}. `;
+            
+            if(state.model === 'ChatGPT 5') {
+                sys += "You are ChatGPT 5. Focus on coding. Provide file headers (**File: name**) and code blocks. Use code_execution to verify logic.";
+            } else if(state.model === 'Gemini 3 Canvas') {
+                sys += "You are Gemini 3 Canvas. Create Single-File HTML/JS/CSS prototypes. Start with **File: canvas.html**. Use Tailwind CSS via CDN.";
+            } else if(state.model === 'Gemini 2.5 Live') {
+                sys += "You are Gemini Live. Conversational, fast, spoken-style.";
+            } else if(state.model === 'Gemini 2.0 Thinking') {
+                sys += "You are Gemini 2.0 Thinking. Use deep reasoning and step-by-step logic.";
+            }
+            
+            // Imagen Logic
+            if(state.model === 'Imagen 4') {
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ instances: [{ prompt: text }], parameters: { sampleCount: 1 } })
+                    });
+                    const d = await res.json();
+                    if(d.predictions) {
+                        state.messages[aiMsgIndex].content = `🎨 Generated Image: ${text}`;
+                        state.messages[aiMsgIndex].generatedImage = `data:image/png;base64,${d.predictions[0].bytesBase64Encoded}`;
+                    } else {
+                        state.messages[aiMsgIndex].content = "Gagal membuat gambar.";
+                    }
+                } catch { state.messages[aiMsgIndex].content = "Gagal membuat gambar."; }
+            } else {
+                // Gemini Logic
+                let modelId = "gemini-2.5-flash-preview-09-2025";
+                if(state.model === 'Gemini 2.0 Thinking') modelId = "gemini-2.0-flash-thinking-exp-01-21";
+
+                const parts = [];
+                if(fileData) {
+                    if(fileData.isImage || fileData.isAudio || fileData.isVideo) parts.push({ inlineData: { mimeType: fileData.type, data: fileData.data.split(',')[1] } });
+                    else parts.push({ text: `[FILE: ${fileData.name}]\n${fileData.data}` });
+                }
+                parts.push({ text: text });
+
+                const payload = { contents: [{ parts }], systemInstruction: { parts: [{ text: sys }] } };
+                
+                // Tools
+                const tools = [];
+                if(state.useSearch && state.model === 'Gemini 3') tools.push({ google_search: {} });
+                if(state.model === 'ChatGPT 5') tools.push({ code_execution: {} });
+                if(tools.length > 0) payload.tools = tools;
+
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    const d = await res.json();
+                    const reply = d.candidates?.[0]?.content?.parts?.[0]?.text || "Error.";
+                    state.messages[aiMsgIndex].content = reply;
+                    
+                    if(state.model !== 'Gemini 3 Canvas' && state.model !== 'Imagen 4') {
+                       getSuggestions(reply, aiMsgIndex);
+                    }
+
+                } catch { state.messages[aiMsgIndex].content = "Koneksi Error."; }
+            }
+
+            renderMessages();
+            if(state.model === 'Gemini 2.5 Live') playTTS(null, state.messages[aiMsgIndex].content);
+        }
+
+        async function getSuggestions(context, msgIndex) {
+             const langName = LANGUAGES[state.lang] ? LANGUAGES[state.lang].prompt : 'Indonesian';
+             try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Based on: "${context.substring(0,500)}", generate 3 short follow-up questions for user. Return ONLY questions, one per line. Language: ${langName}` }] }] })
+                });
+                const d = await res.json();
+                const text = d.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                const sugs = text.split('\n').map(l => l.replace(/^\d+\.\s*|- \s*/, '').trim()).filter(l => l.length > 0).slice(0, 3);
+                state.messages[msgIndex].suggestions = sugs;
+                renderMessages();
+             } catch {}
+        }
+
+        async function playTTS(textRaw, textOverride) {
+            const txt = textOverride || decodeURIComponent(textRaw);
+            const cleanTxt = txt.replace(/[*`#]/g, '');
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: cleanTxt }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: state.voice } } } } })
+                });
+                const d = await res.json();
+                const b64 = d.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                if(b64) {
+                    const bin = atob(b64);
+                    const arr = new Uint8Array(bin.length);
+                    for(let i=0; i<bin.length; i++) arr[i] = bin.charCodeAt(i);
+                    const buffer = new ArrayBuffer(44 + arr.length);
+                    const v = new DataView(buffer);
+                    const w = (o,s)=> { for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+                    w(0,'RIFF'); v.setUint32(4,36+arr.length,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,24000,true); v.setUint32(28,48000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,arr.length,true);
+                    new Uint8Array(buffer,44).set(arr);
+                    new Audio(URL.createObjectURL(new Blob([buffer],{type:'audio/wav'}))).play();
+                }
+            } catch {}
+        }
+
+        async function enhancePrompt() {
+            const inp = document.getElementById('prompt-input');
+            if(!inp.value) return;
+            const langName = LANGUAGES[state.lang] ? LANGUAGES[state.lang].prompt : 'Indonesian';
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Rewrite to be professional and detailed (${langName}): ${inp.value}` }] }] })
+                });
+                const d = await res.json();
+                inp.value = d.candidates?.[0]?.content?.parts?.[0]?.text || inp.value;
+            } catch {}
+        }
+
+        async function summarizeChat() {
+            if(state.messages.length <= 1) return;
+            const hist = state.messages.map(m => `${m.role}: ${m.content}`).join('\n');
+            const langName = LANGUAGES[state.lang] ? LANGUAGES[state.lang].prompt : 'Indonesian';
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Summarize this chat in bullet points (${langName}):\n${hist}` }] }] })
+                });
+                const d = await res.json();
+                const text = d.candidates?.[0]?.content?.parts?.[0]?.text || "Error";
+                state.messages.push({ role: 'ai', content: `📝 **Summary**:\n${text}`, model: 'Gemini 3', timestamp: new Date() });
+                renderMessages();
+            } catch {}
+        }
+
+        async function refactorCode(btn) {
+             const code = btn.parentElement.parentElement.nextElementSibling.innerText;
+             const langName = LANGUAGES[state.lang].prompt;
+             state.messages.push({ role: 'ai', content: 'Refactoring...', model: 'ChatGPT 5' });
+             renderMessages();
+             const lastIdx = state.messages.length - 1;
+             try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `Refactor this code to be cleaner and more efficient (${langName}):\n${code}` }] }] })
+                });
+                const d = await res.json();
+                state.messages[lastIdx].content = d.candidates?.[0]?.content?.parts?.[0]?.text || "Error";
+                renderMessages();
+             } catch {}
+        }
+
+        // Camera & Mic
+        function startCamera() { document.getElementById('camera-modal').classList.remove('hidden'); navigator.mediaDevices.getUserMedia({video:true}).then(s => document.getElementById('cam-video').srcObject = s); }
+        function stopCamera() { document.getElementById('camera-modal').classList.add('hidden'); const s = document.getElementById('cam-video').srcObject; if(s) s.getTracks().forEach(t=>t.stop()); }
+        function snapPhoto() { 
+            const v = document.getElementById('cam-video'); 
+            const c = document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight;
+            c.getContext('2d').drawImage(v,0,0);
+            state.attachment = { name: 'cam.jpg', type: 'image/jpeg', data: c.toDataURL('image/jpeg'), isImage: true };
+            document.getElementById('attachment-preview').classList.remove('hidden'); document.getElementById('att-name').innerText = 'Foto Kamera';
+            stopCamera();
+        }
+        function toggleMic() {
+            if(state.isRecording) { mediaRec.stop(); state.isRecording=false; document.getElementById('btn-mic').classList.remove('text-red-500','animate-pulse'); }
+            else {
+                navigator.mediaDevices.getUserMedia({audio:true}).then(s => {
+                    mediaRec = new MediaRecorder(s);
+                    const ch = [];
+                    mediaRec.ondataavailable = e => ch.push(e.data);
+                    mediaRec.onstop = () => {
+                        const r = new FileReader();
+                        r.onload = e => {
+                            state.attachment = { name: 'voice.webm', type: 'audio/webm', data: e.target.result, isImage: false, isAudio: true };
+                            document.getElementById('attachment-preview').classList.remove('hidden'); document.getElementById('att-name').innerText = 'Pesan Suara';
+                        };
+                        r.readAsDataURL(new Blob(ch));
+                    };
+                    mediaRec.start(); state.isRecording=true; document.getElementById('btn-mic').classList.add('text-red-500','animate-pulse');
+                });
+            }
+        }
+
+        // --- HELPER ---
+        function copyCode(btn) {
+            const code = btn.parentElement.parentElement.nextElementSibling.innerText;
+            navigator.clipboard.writeText(code);
+            btn.innerHTML = '<i data-lucide="check" class="w-3 text-green-400"></i>';
+            setTimeout(() => { btn.innerHTML = '<i data-lucide="copy" class="w-3"></i>'; lucide.createIcons(); }, 1500);
+        }
+
+        // --- BOOTSTRAP ---
+        init();
+        document.getElementById('set-nickname').addEventListener('input', e => state.nickname = e.target.value);
+        document.getElementById('prompt-input').addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+    </script>
+</body>
+</html>
